@@ -13,7 +13,8 @@ library(DAAG)
 
 # Inspect and summarize the data.
 head(cars) # First 6 rows of dataset
-View(cars) # View the dataset in tabular format
+print(cars) # Print the entire dataset (since it's small)
+# Alternative: use head(cars, n = 20) to see more rows
 str(cars) # Structure of cars dataset
 summary(cars) # Summarize the data of cars dataset
 
@@ -36,16 +37,20 @@ boxplot(cars$dist, main="Distance", sub=paste("Outlier rows: ", boxplot.stats(ca
 
 # Let's see distribution of data for speed & distance through Histogram using ggplot
 ggplot(cars, aes(x=speed)) + geom_histogram() +
-  labs(title = "Historgram of Speed") +
+  labs(title = "Histogram of Speed") +
   labs(x ="Speed") + labs(y = "Frequency") +
-  geom_vline(xintercept = mean(cars$speed), show_guide=TRUE, color="red", labels="Average") +
-  geom_vline(xintercept = median(cars$speed), show_guide=TRUE, color="blue", labels="Median")
+  geom_vline(xintercept = mean(cars$speed), color="red", linetype="dashed") +
+  geom_vline(xintercept = median(cars$speed), color="blue", linetype="dashed") +
+  annotate("text", x = mean(cars$speed), y = Inf, label = "Mean", vjust = 2, color = "red") +
+  annotate("text", x = median(cars$speed), y = Inf, label = "Median", vjust = 2, color = "blue")
 
 ggplot(cars, aes(x=dist)) + geom_histogram() +
-  labs(title = "Historgram of Distance") +
+  labs(title = "Histogram of Distance") +
   labs(x ="Distance") + labs(y = "Frequency") +
-  geom_vline(xintercept = mean(cars$dist), show_guide=TRUE, color="red", labels="Average") +
-  geom_vline(xintercept = median(cars$dist), show_guide=TRUE, color="blue", labels="Median")
+  geom_vline(xintercept = mean(cars$dist), color="red", linetype="dashed") +
+  geom_vline(xintercept = median(cars$dist), color="blue", linetype="dashed") +
+  annotate("text", x = mean(cars$dist), y = Inf, label = "Mean", vjust = 2, color = "red") +
+  annotate("text", x = median(cars$dist), y = Inf, label = "Median", vjust = 2, color = "blue")
 
 # Another way to visualize distribution - Using Density Plot To Check If Response Variable Is Close To Normal
 library(e1071)  # for skewness function
@@ -144,16 +149,45 @@ actuals_preds2 # Accuracy is good but you can observe negative distance value ha
 # Step 5: Calculate the Min Max accuracy and MAPE
 
 # Min-Max Accuracy Calculation
-min_max_accuracy <- mean(apply(actuals_preds, 1, min) / apply(actuals_preds, 1, max))
+min_max_accuracy <- mean(apply(actuals_preds2, 1, min) / apply(actuals_preds2, 1, max))
 min_max_accuracy # => 38.00%, min_max accuracy
 
 # Mean Absolute Percentage Deviation (MAPE) Calculation
-mape <- mean(abs((actuals_preds$predicteds - actuals_preds$actuals))/actuals_preds$actuals)
+mape <- mean(abs((actuals_preds2$predicteds - actuals_preds2$actuals))/actuals_preds2$actuals)
 mape # => 69.95%, mean absolute percentage deviation
 
-# Alternately, you can compute all the error metrics in one go using the regr.eval() function in DMwR package.
-# You will have to install.packages('DMwR') for this if you are using it for the first time.
-DMwR::regr.eval(actuals_preds$actuals, actuals_preds$predicteds)
+# Alternative 1: Using Metrics package (install if needed: install.packages("Metrics"))
+# library(Metrics)
+# mae(actuals_preds2$actuals, actuals_preds2$predicteds)
+# rmse(actuals_preds2$actuals, actuals_preds2$predicteds)
+
+# Alternative 2: Using caret package for comprehensive metrics
+if (!require(caret, quietly = TRUE)) {
+  install.packages("caret")
+  library(caret)
+}
+
+# Get comprehensive regression metrics using caret
+regression_metrics <- postResample(pred = actuals_preds2$predicteds, obs = actuals_preds2$actuals)
+print("Regression Evaluation Metrics (using caret):")
+print(regression_metrics)
+
+# Alternative 3: Manual calculation (backup method)
+mae_manual <- mean(abs(actuals_preds2$predicteds - actuals_preds2$actuals))
+mse_manual <- mean((actuals_preds2$predicteds - actuals_preds2$actuals)^2)
+rmse_manual <- sqrt(mse_manual)
+r_squared_manual <- 1 - sum((actuals_preds2$actuals - actuals_preds2$predicteds)^2) / sum((actuals_preds2$actuals - mean(actuals_preds2$actuals))^2)
+
+cat("\nManual Calculation Metrics:\n")
+cat("MAE (Mean Absolute Error):", mae_manual, "\n")
+cat("MSE (Mean Squared Error):", mse_manual, "\n") 
+cat("RMSE (Root Mean Squared Error):", rmse_manual, "\n")
+cat("MAPE (Mean Absolute Percentage Error):", mape, "\n")
+cat("R-squared:", r_squared_manual, "\n")
+
+# Display the actual vs predicted comparison
+print("Actual vs Predicted Values:")
+print(actuals_preds2)
 
 # Step 5: k- Fold Cross validation
 # One way to do this rigorous testing, is to check if the model equation performs equally well, when trained and tested on different distinct chunks of data.
