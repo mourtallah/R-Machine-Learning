@@ -200,6 +200,9 @@ print(actuals_preds2)
 # If the lines of best fit from the k-folds don't vary too much with respect the the slope and level.
 # In other words, they should be parallel and as close to each other as possible.
 
+# Reset plotting parameters to single panel for CV plot
+par(mfrow=c(1, 1))
+
 cvResults <- suppressWarnings(CVlm(data=cars, form.lm=dist ~ speed, m=5, dots=FALSE,
                                    seed=29, legend.pos="topleft",  printit=FALSE,
                                    main="Small symbols are predicted values while bigger ones are actuals."))  # performs the CV
